@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.shortcuts import render, HttpResponseRedirect, HttpResponse
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core import serializers
 from django.http import JsonResponse
@@ -20,6 +21,7 @@ def show_genres(request):
     return render(request, 'campana/genres.html', ctx)
 
 
+@login_required()
 def persona_add(request):
     if request.method == 'POST':
         username = request.POST.get('username')

@@ -18,6 +18,7 @@ class ClienteAdmin(TreeAdmin):
 
 admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(Cliente, ClienteAdmin)
+admin.site.register(Candidato)
 admin.site.register(
     Persona,
     DraggableMPTTAdmin,

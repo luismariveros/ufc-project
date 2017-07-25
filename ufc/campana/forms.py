@@ -25,18 +25,20 @@ class ClienteForm(MoveNodeForm):
         }
 
 
+
 class PersonaForm(forms.ModelForm):
 
     class Meta:
         model = Persona
-        fields = ('permiso', 'parent')
+        fields = ('parent', )
+        labels = {
+            'parent': 'Depende de:'
+        }
 
     def __init__(self, user, *args, **kwargs):
-        p = Persona.objects.get(usuario__username=user)
-        print p.get_descendants(include_self=True)
+        persona = Persona.objects.get(usuario__username=user)
         super(PersonaForm, self).__init__(*args, **kwargs)
-        #print Persona.objects.filter(usuario__groups__in=user.groups.object.all())
-        self.fields['parent'].queryset = Persona.objects.filter(pk__in=p.get_descendants(include_self=True))
+        self.fields['parent'].queryset = Persona.objects.filter(pk__in=persona.get_descendants(include_self=True))
 
 
 class UsuarioCrearForm(UserCreationForm):

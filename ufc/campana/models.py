@@ -8,11 +8,14 @@ from django.contrib.auth.models import User
 
 class Candidato(models.Model):
     nombre = models.CharField(max_length=200)
+    codigo = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return "%s-%s" % (self.codigo, self.nombre)
 
 
 class Persona(MPTTModel):
     usuario = models.ForeignKey(User, null=True)
-    permiso = models.BooleanField(default=False, help_text="El Usuario podra revisar toda la estructura?")
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
     def __unicode__(self):
