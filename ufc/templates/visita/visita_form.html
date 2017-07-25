@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load bootstrap3 %}
+
+{% block title %}Agregar{% endblock %}
+
+{% block content %}
+
+        <div class="col-lg-6">
+            <form action="" method="post" class="form">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+
+                {% buttons %}
+                    <button type="submit" class="btn btn-primary">
+                        {% bootstrap_icon "save" %} Guardar
+                    </button>
+                {% endbuttons %}
+            </form>
+        </div>
+        <div class="col-lg-6">
+            {% bootstrap_form form_padron %}
+        <div>
+
+
+{% endblock content %}
+
+{% block extra_script %}
+    <script>
+        $("#id_cedula").change(function () {
+            var cedula = $(this).val();
+
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'padron:cedula' 0 %}'.replace('0', cedula),
+                data: {
+                    'cedula': cedula
+                },
+                dataType: 'json',
+                success: function (data) {
+
+                    if (data) {
+                        $('#id_padron-cedula').val(data.cedula);
+                        $('#id_padron-nombre').val(data.nombre);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
+

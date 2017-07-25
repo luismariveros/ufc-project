@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load mptt_tags %}
+{% load bootstrap3 %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Usuario del Sistema</h3>
+                </div>
+                <div class="panel-body">
+                    <form action="{% url 'campana:usuario_add' %}" method="post" class="form" id="form_usuario">
+                        {% csrf_token %}
+                        {% bootstrap_form form_user %}
+
+                        {% buttons %}
+                            <button type="submit" class="btn btn-success" id="id_usuario_add">
+                                {% bootstrap_icon "save" %} Guardar Usuario
+                            </button>
+                        {% endbuttons %}
+                        <div class="alert alert-success" id="block-alerta">
+                            <strong>Usuario creado!</strong> Favor completar la Estructura del usuario.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-danger">
+            <div class="panel-heading">
+                <h3 class="panel-title">Estructura</h3>
+            </div>
+            <div class="panel-body">
+                <form action="" method="post" class="form">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+                    <input type="hidden" name="username" id="username">
+
+                    {% buttons %}
+                        <button type="submit" class="btn btn-warning" id="id_estructura">
+                            {% bootstrap_icon "save" %} Guardar Estructura
+                        </button>
+                    {% endbuttons %}
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+
+{% block extra_script %}
+    <script type="application/javascript">
+
+        $().ready(function(){
+            $('#block-alerta').hide();
+            $('#id_nombre').focus();
+            $("#id_parent option[value='']").remove();
+            $('#id_estructura').prop('disabled',true);
+        });
+
+        $("#form_usuario").submit(function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var posting = $.post( form.attr('action'), form.serialize() );
+            posting.done(function(data) {
+                $('#block-alerta').show();
+                $('#id_usuario_add').prop('disabled',true);
+                $('#id_estructura').removeAttr('disabled');
+
+                var json = $.parseJSON(data);
+                $(json).each(function(i,val){
+                    console.log(val.pk);
+                    console.log(val.fields.username);
+                    $('#username').val(val.fields.username);
+                });
+            });
+            posting.fail(function(data) {
+                alert('Error. Cargar de nuevo')
+            });
+        });
+
+        $("#id_username").change(function () {
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'campana:usuario_validar' %}',
+                dataType: 'json',
+                data: {
+                    'username': $(this).val()
+                },
+                success: function (data) {
+                    if (data.is_taken) {
+                        $('#block-error').remove();
+                        $('#id_username').closest('.form-group').addClass('has-error');
+                        $('#id_username').closest('.form-group').append('<div id="block-error" class="help-block">'.concat(data.error_message,'</div>'));
+                    }else{
+                        $('#id_username').closest('.form-group').removeClass('has-error');
+                        $('#id_username').closest('.form-group').addClass('has-success');
+                        $('#block-error').remove();
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load bootstrap3 %}
+{% load mptt_tags %}
+
+{% block content %}
+{#    {% for item, info in annotated_list %}#}
+{#        {% if info.open %}#}
+{#            <ul><li>#}
+{#            {% else %}#}
+{#        </li><li>#}
+{#        {% endif %}#}
+{##}
+{#        {{ item }}#}
+{##}
+{#        {% for close in info.close %}#}
+{#            </li></ul>#}
+{#        {% endfor %}#}
+{#    {% endfor %}#}
+
+
+    <ul>
+        {% recursetree nodes %}
+            <li>
+                {{ node.usuario }}
+                {% if not node.is_leaf_node %}
+                    <ul class="children">
+                        {{ children }}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endrecursetree %}
+    </ul>
+{% endblock content %}
