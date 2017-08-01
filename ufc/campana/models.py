@@ -4,38 +4,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from treebeard.mp_tree import MP_Node
 from django.db import models
 from django.contrib.auth.models import User
-
-
-class Candidato(models.Model):
-    nombre = models.CharField(max_length=200)
-    codigo = models.CharField(max_length=20)
-
-    def __unicode__(self):
-        return "%s-%s" % (self.codigo, self.nombre)
-
-
-class Persona(MPTTModel):
-    usuario = models.ForeignKey(User, null=True)
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
-
-    def __unicode__(self):
-        return self.usuario.get_full_name() if self.usuario else 'Sin Usuario'
-
-
-class Votante(models.Model):
-    cedula = models.IntegerField(db_index=True)
-
-    def __unicode__(self):
-        return self.cedula
-
-
-class Categoria(MP_Node):
-    nombre = models.CharField(max_length=50)
-
-    node_order_by = ['nombre']
-
-    def __unicode__(self):
-        return 'Categoria: %s' % self.nombre
+from django.utils.timezone import now
 
 
 class Partido(models.Model):
@@ -57,6 +26,42 @@ class Eleccion(models.Model):
 
     def __unicode__(self):
         return self.nombre
+
+
+class Candidato(models.Model):
+    nombre = models.CharField(max_length=200)
+    codigo = models.CharField(max_length=20)
+
+    def __unicode__(self):
+        return "%s-%s" % (self.codigo, self.nombre)
+
+
+class Persona(MPTTModel):
+    usuario = models.ForeignKey(User, null=True)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+
+    def __unicode__(self):
+        return self.usuario.get_full_name() if self.usuario else 'Sin Usuario'
+
+
+class Votante(models.Model):
+    cedula = models.IntegerField(db_index=True)
+    persona = models.ForeignKey(Persona, null=True)
+    candidato = models.ForeignKey(Candidato, null=True)
+    eleccion = models.ForeignKey(Eleccion, null=True)
+    fecha = models.DateField(default=now)
+
+    def __unicode__(self):
+        return "%s-%s" % (self.candidato, self.cedula)
+
+
+class Categoria(MP_Node):
+    nombre = models.CharField(max_length=50)
+
+    node_order_by = ['nombre']
+
+    def __unicode__(self):
+        return 'Categoria: %s' % self.nombre
 
 
 class Cliente(MP_Node):

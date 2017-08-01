@@ -27,9 +27,7 @@ def show_genres(request):
 def persona_add(request):
     if request.method == 'POST':
         username = request.POST.get('username')
-
         form = PersonaForm(request.user, request.POST)
-        print request.POST
         if form.is_valid():
             persona = form.save(commit=False)
             usuario = User.objects.get(username=username)
