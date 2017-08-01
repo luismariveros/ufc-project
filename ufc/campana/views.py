@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.shortcuts import render, HttpResponseRedirect, HttpResponse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.urlresolvers import reverse
 from django.core import serializers
 from django.http import JsonResponse
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import Permission
 import json
 
 from .models import *
@@ -22,22 +23,32 @@ def show_genres(request):
 
 
 @login_required()
+@permission_required('campana.add_persona', raise_exception=True)
 def persona_add(request):
     if request.method == 'POST':
         username = request.POST.get('username')
+
         form = PersonaForm(request.user, request.POST)
+        print request.POST
         if form.is_valid():
             persona = form.save(commit=False)
-            persona.usuario = User.objects.get(username=username)
+            usuario = User.objects.get(username=username)
+            if 'permiso' in request.POST:
+                permisos = request.POST.getlist('permiso')
+                for permiso in permisos:
+                    grupo = Group.objects.get(name=usuario.groups.first().name+'-'+permiso)
+                    usuario.groups.add(grupo)
+            persona.usuario = usuario
             persona.save()
             return HttpResponseRedirect(reverse('campana:show'))
     else:
         form = PersonaForm(request.user)
+        #print Permission.objects.filter(user=request.user)[0].codename
         form_user = UsuarioCrearForm()
-
-        #print request.user.groups.all()
-        print Persona.objects.filter(usuario__groups__in=request.user.groups.all())
-    ctx = {'form': form, 'form_user': form_user}
+        ctx = {'form': form, 'form_user': form_user}
+        if bool(request.user.groups.filter(name__contains='ADMIN')) or request.user.is_superuser:
+            form_permiso = PermisoForm()
+            ctx.update({'form_permiso': form_permiso})
     return render(request, 'campana/cliente_add.html', ctx)
 
 
@@ -64,8 +75,6 @@ def ws_usuario_validar(request):
     }
     if data['is_taken']:
         data['error_message'] = 'Ya existe un usuario registrado con ese email.'
-
-    print data
     return JsonResponse(data)
 
 
@@ -73,16 +82,17 @@ def ws_usuario_add(request):
     if request.method == 'POST' and request.is_ajax():
         form = UsuarioCrearForm(request.POST)
         if form.is_valid():
-            grupo = request.user.groups.all()[0]  # Obtener el grupo  del usuario autenticado
+            grupo = request.user.groups.all()[0]  # Obtener el primer grupo del usuario autenticado
             usuario = form.save()
             usuario.groups.add(grupo)
+            usuario.email = usuario.username
             usuario.save()
 
-            d = serializers.serialize('json', User.objects.filter(username=usuario.username), fields=('pk', 'username'))
-
-            print  d
-            #return JsonResponse({'user_id': usuario.id}, safe=False)
-            return JsonResponse(d, safe=False)
+            data = serializers.serialize('json',
+                                         User.objects.filter(username=usuario.username),
+                                         fields=('pk', 'username')
+                                         )
+            return JsonResponse(data, safe=False)
 
 
 def cliente_add(request):

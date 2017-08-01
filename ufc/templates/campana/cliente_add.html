@@ -17,7 +17,7 @@
 
                         {% buttons %}
                             <button type="submit" class="btn btn-success" id="id_usuario_add">
-                                {% bootstrap_icon "save" %} Guardar Usuario
+                                {% bootstrap_icon "user" %} Crear Usuario
                             </button>
                         {% endbuttons %}
                         <div class="alert alert-success" id="block-alerta">
@@ -29,24 +29,35 @@
         </div>
         <div class="col-md-6">
             <div class="panel panel-danger">
-            <div class="panel-heading">
-                <h3 class="panel-title">Estructura</h3>
+                <div class="panel-heading">
+                    <h3 class="panel-title">Estructura</h3>
+                </div>
+                <div class="panel-body">
+                    <form action="" method="post" class="form">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+                        <input type="hidden" name="username" id="username">
+
+                        {% if user.is_superuser or form_permiso %}
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Permiso</h3>
+                                </div>
+                                <div class="panel-body">
+                                    {% bootstrap_form form_permiso %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% buttons %}
+                            <button type="submit" class="btn btn-warning" id="id_estructura">
+                                {% bootstrap_icon "save" %} Guardar
+                            </button>
+                        {% endbuttons %}
+                    </form>
+                </div>
             </div>
-            <div class="panel-body">
-                <form action="" method="post" class="form">
-                    {% csrf_token %}
-                    {% bootstrap_form form %}
-                    <input type="hidden" name="username" id="username">
 
-                    {% buttons %}
-                        <button type="submit" class="btn btn-warning" id="id_estructura">
-                            {% bootstrap_icon "save" %} Guardar Estructura
-                        </button>
-                    {% endbuttons %}
-
-
-                </form>
-            </div>
         </div>
     </div>
 

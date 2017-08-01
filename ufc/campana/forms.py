@@ -25,7 +25,6 @@ class ClienteForm(MoveNodeForm):
         }
 
 
-
 class PersonaForm(forms.ModelForm):
 
     class Meta:
@@ -36,9 +35,20 @@ class PersonaForm(forms.ModelForm):
         }
 
     def __init__(self, user, *args, **kwargs):
-        persona = Persona.objects.get(usuario__username=user)
-        super(PersonaForm, self).__init__(*args, **kwargs)
-        self.fields['parent'].queryset = Persona.objects.filter(pk__in=persona.get_descendants(include_self=True))
+        try:
+            persona = Persona.objects.get(usuario__username=user)
+            super(PersonaForm, self).__init__(*args, **kwargs)
+            self.fields['parent'].queryset = Persona.objects.filter(pk__in=persona.get_descendants(include_self=True))
+        except:
+            super(PersonaForm, self).__init__(*args, **kwargs)
+
+
+class PermisoForm(forms.Form):
+    choices = (
+        ('ADMIN', 'Administrador'),
+        ('COLAB', 'Colaborador')
+    )
+    permiso = forms.MultipleChoiceField(choices=choices, required=False)
 
 
 class UsuarioCrearForm(UserCreationForm):
