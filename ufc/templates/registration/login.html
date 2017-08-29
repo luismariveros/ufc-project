@@ -1,50 +1,98 @@
-{% extends 'base.html' %}
 {% load bootstrap3 %}
+{% load staticfiles %}
+{% load static %}
 
-{% block title %}Ingresar al Sistema{% endblock %}
+<!DOCTYPE html>
 
-{% block content %}
-    <div style="margin-top:50px;" class="mainbox col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
-        <div class="panel panel-info" >
-            <div class="panel-heading">
-                <div class="panel-title">Ingresar al Sistema</div>
-            </div>
+<html lang="es">
 
-            <div style="padding-top:30px" class="panel-body" >
-                <div style="display:none" id="login-alert" class="alert alert-danger col-sm-12"></div>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ingresar al Sistema</title>
+    <meta name="description" content=""/>
+    <meta name="author" content="OpenMind">
 
-                <form action="{% url 'login' %}" method="post" class="form-horizontal" role="form">
-                    {% csrf_token %}
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
 
-                    <div style="margin-bottom: 25px" class="input-group">
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-                        <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email">
+    <!-- MetisMenu CSS -->
+    <link href="{% static '/vendor/metisMenu/metisMenu.min.css' %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{% static 'dist/css/sb-admin-2.css' %}" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+                <div class="login-panel panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Ingresar al Sistema</h3>
                     </div>
-
-                    <div style="margin-bottom: 25px" class="input-group">
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                        <input id="login-password" type="password" class="form-control" name="password" placeholder="password">
-                    </div>
-
-
-                    <div style="margin-top:10px" class="form-group">
-                        <!-- Button -->
-                        <div class="col-sm-12 controls">
-                            <button class="btn btn-success" type="submit">Ingresar</button>
-                            <input type="hidden" name="next" value="{{ next }}" />
-                        </div>
-                    </div>
-
-
-                    <div class="form-group">
-                        <div class="col-md-12 control">
-                            <div style="border-top: 1px solid#888; padding-top:15px; font-size:85%" >
-                                <a href="{% url 'password_reset' %}">Contraseña olvidada?</a>
+                    <div class="panel-body">
+                        {% if form.errors %}
+                            <div class="alert alert-danger col-sm-12">
+                                <p>Your username and password didn't match. Please try again.</p>
                             </div>
-                        </div>
+                        {% endif %}
+
+                        <form action="{% url 'login' %}" method="post" class="form-horizontal" role="form">
+                            {% csrf_token %}
+
+                            <div style="margin-bottom: 25px" class="input-group">
+                                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                                <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email">
+                            </div>
+
+                            <div style="margin-bottom: 25px" class="input-group">
+                                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                                <input id="login-password" type="password" class="form-control" name="password" placeholder="password">
+                            </div>
+
+
+                            <div style="margin-top:10px" class="form-group">
+                                <!-- Button -->
+                                <div class="col-sm-12 controls">
+                                    <button class="btn btn-success" type="submit">Ingresar</button>
+                                    <input type="hidden" name="next" value="{{ next }}" />
+                                </div>
+                            </div>
+
+
+                            <div class="form-group">
+                                <div class="col-md-12 control">
+                                    <div style="border-top: 1px solid#888; padding-top:15px; font-size:85%" >
+                                        <a href="{% url 'password_reset' %}">Contraseña olvidada?</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-{% endblock %}
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="{% static 'vendor/metisMenu/metisMenu.min.js' %}"></script>
+
+    <!-- Custom scripts for this template -->
+    <script src="{% static 'dist/js/sb-admin-2.js' %}"></script>
+</body>
+</html>

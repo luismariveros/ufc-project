@@ -29,15 +29,17 @@ class Eleccion(models.Model):
 
 
 class Candidato(models.Model):
-    nombre = models.CharField(max_length=200)
+    usuario = models.ForeignKey(User)
     codigo = models.CharField(max_length=20)
+    partido = models.ForeignKey(Partido)
+    eleccion = models.ForeignKey(Eleccion)
 
     def __unicode__(self):
-        return "%s-%s" % (self.codigo, self.nombre)
+        return self.usuario.get_full_name()
 
 
 class Persona(MPTTModel):
-    usuario = models.ForeignKey(User, null=True)
+    usuario = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
     def __unicode__(self):
@@ -46,7 +48,7 @@ class Persona(MPTTModel):
 
 class Votante(models.Model):
     cedula = models.IntegerField(db_index=True)
-    persona = models.ForeignKey(Persona, null=True)
+    persona = models.ForeignKey(Persona, null=True, on_delete=models.CASCADE)
     candidato = models.ForeignKey(Candidato, null=True)
     eleccion = models.ForeignKey(Eleccion, null=True)
     fecha = models.DateField(default=now)

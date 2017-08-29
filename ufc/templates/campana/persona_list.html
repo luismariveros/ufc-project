@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load bootstrap3 %}
+{% load mptt_tags %}
+{% load static %}
+
+{% block extra_head %}
+{#    <link href="{% static 'dist/css/jqtree.css' %}" rel="stylesheet">#}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+{% endblock extra_head %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <a id="id_editar_persona" role="button" class="btn btn-primary" href="" disabled="">Editar Persona</a>
+            <a id="id_expandir" role="button" class="btn btn-info" onclick="jstreeToggleState();">Contraer</a>
+            <div id="tree1">
+                <ul>
+                    {% recursetree nodes %}
+                        <li id="{{ node.usuario.id }}">
+                            <a href="{% url 'campana:persona_edit' node.usuario.id %}">{{ node.usuario.get_full_name }}</a>
+                            {% if not node.is_leaf_node %}
+                                <ul class="children">
+                                    {{ children }}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endrecursetree %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_script %}
+{#    <script src="{% static 'dist/js/tree.jquery.js' %}"></script>#}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <script type="application/javascript">
+        $(function () {
+            $('#tree1').jstree({
+                "core" : {
+                    "themes" : {
+                        "icons" : false
+                    },
+                    "check_callback" : true,
+                    "multiple": false
+                },
+                "plugins" : ["themes", "dnd", "wholerow"]
+            });
+            $('#tree1').on('ready.jstree', function(){
+                $(this).jstree('open_all');
+            });
+        });
+        $('#tree1').on("select_node.jstree", function (e, data) {
+            var href = data.node.a_attr.href;
+            if(href == '#')
+                return '';
+            $('#id_editar_persona').removeAttr('disabled');
+            $('#id_editar_persona').attr("href", href);
+        });
+
+        var isTreeOpen = true;
+        function jstreeToggleState() {
+            if(isTreeOpen){
+                $("#tree1").jstree('close_all');
+                $('#id_expandir').text("Expandir");
+            }else{
+                $("#tree1").jstree('open_all');
+                $('#id_expandir').text("Contraer");
+            }
+            isTreeOpen =! isTreeOpen;
+        }
+    </script>
+{% endblock %}

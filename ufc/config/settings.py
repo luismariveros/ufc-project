@@ -36,10 +36,6 @@ print BASE_DIR
 
 STATIC_ROOT = '/home/luisma/proyectos/django/ufc-project/ufc/staticfiles/'
 
-
-
-
-
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -82,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'campana.context_processors.my_processor',
             ],
         },
     },
@@ -133,4 +130,5 @@ USE_L10N = True
 USE_TZ = False
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = LOGIN_URL

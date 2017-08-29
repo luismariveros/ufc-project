@@ -1,25 +1,74 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.shortcuts import render, HttpResponseRedirect, HttpResponse
-from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import render, HttpResponseRedirect, get_list_or_404, get_object_or_404
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.core.urlresolvers import reverse
 from django.core import serializers
 from django.http import JsonResponse
+from django.contrib import messages
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Permission
-import json
 
 from .models import *
 from .forms import *
+from .decorators import user_is_descendants
+from padron.models import Individuo as PadronIndividuo
+from padron.forms import PersonaPadronForm
 
 from mptt.exceptions import InvalidMove
 from mptt.forms import MoveNodeForm
 
 
-def show_genres(request):
-    ctx = {'nodes': Persona.objects.all()}
-    return render(request, 'campana/genres.html', ctx)
+@login_required()
+def persona_list(request):
+    try:
+        persona = Persona.objects.get(usuario=request.user)
+        nodes = persona.get_descendants(include_self=True)
+    except ObjectDoesNotExist:
+        nodes = None
+    ctx = {'nodes': nodes}
+    return render(request, 'campana/persona_list.html', ctx)
+
+
+@login_required()
+def votante_list(request):
+    persona = get_object_or_404(Persona, usuario__username=request.user)
+    votantes = Votante.objects.filter(persona=persona).values('cedula')
+    individuos = PadronIndividuo.objects.filter(cedula__in=votantes)
+    ctx = {'persona': persona, 'object_list': votantes}
+    return render(request, 'campana/votante_list.html', ctx)
+
+
+@login_required()
+def votante_add(request):
+    if request.method == 'POST':
+        form = VotanteForm(request.POST)
+        if form.is_valid():
+            cedula = form.cleaned_data.get('cedula')
+            persona = Persona.objects.get(usuario=request.user)
+            descendientes = persona.get_root().get_descendants()  # Todos los descendientes del Candidato
+            if Votante.objects.filter(persona__in=descendientes, cedula=cedula).exists():
+                messages.error(request, 'Votante ya agregado por otra Persona.')
+                form = VotanteForm(request.POST)
+                form_user = PersonaPadronForm(auto_id="padron_%s")
+                ctx = {'form': form, 'form_user': form_user}
+                return render(request, 'campana/votante_add.html', ctx)
+            else:
+                candidato = Candidato.objects.get(usuario__persona=persona.get_root())
+                votante = form.save(commit=False)
+                votante.persona = persona
+                votante.candidato = candidato
+                votante.eleccion = candidato.eleccion
+                votante.save()
+                if '_addanother' in request.POST:
+                    return HttpResponseRedirect(reverse('campana:votante_add'))
+                return HttpResponseRedirect(reverse('campana:show'))
+    else:
+        form = VotanteForm()
+        form_user = PersonaPadronForm(auto_id="padron_%s")
+        ctx = {'form': form, 'form_user': form_user}
+    return render(request, 'campana/votante_add.html', ctx)
 
 
 @login_required()
@@ -27,27 +76,71 @@ def show_genres(request):
 def persona_add(request):
     if request.method == 'POST':
         username = request.POST.get('username')
-        form = PersonaForm(request.user, request.POST)
-        if form.is_valid():
-            persona = form.save(commit=False)
-            usuario = User.objects.get(username=username)
-            if 'permiso' in request.POST:
-                permisos = request.POST.getlist('permiso')
-                for permiso in permisos:
-                    grupo = Group.objects.get(name=usuario.groups.first().name+'-'+permiso)
-                    usuario.groups.add(grupo)
-            persona.usuario = usuario
+        form_persona = PersonaForm(request.user, request.POST)
+
+        if form_persona.is_valid():
+            #persona = form.save(commit=False)
+            padre = form_persona.cleaned_data.get('parent')
+            persona = Persona.objects.get(usuario__username=username)
+            persona.parent = padre
+            #usuario = User.objects.get(username=username)
+            if 'grupo' in request.POST:
+                #form_permiso = PermisoForm2(request.user, request.POST)
+                #print form_permiso
+                #if form_permiso.is_valid():
+                #    form_permiso.save()
+                grupos = request.POST.getlist('grupo')
+                print grupos
+                for g in grupos:
+                    grupo = Group.objects.get(id=g)
+                    persona.usuario.groups.add(grupo)
+            #persona.usuario = usuario
             persona.save()
             return HttpResponseRedirect(reverse('campana:show'))
     else:
-        form = PersonaForm(request.user)
-        #print Permission.objects.filter(user=request.user)[0].codename
+        form_persona = PersonaForm(request.user)
         form_user = UsuarioCrearForm()
-        ctx = {'form': form, 'form_user': form_user}
-        if bool(request.user.groups.filter(name__contains='ADMIN')) or request.user.is_superuser:
-            form_permiso = PermisoForm()
-            ctx.update({'form_permiso': form_permiso})
-    return render(request, 'campana/cliente_add.html', ctx)
+        ctx = {'form': form_persona, 'form_user': form_user}
+        if bool(request.user.groups.filter(name__contains='-')) or request.user.is_superuser:
+            form_grupo = GrupoForm(request.user)
+            ctx.update({'form_grupo': form_grupo})
+    return render(request, 'campana/persona_add.html', ctx)
+
+
+@login_required()
+@permission_required('campana.add_persona', raise_exception=True)
+@user_is_descendants
+def persona_edit(request, user_id):
+    persona = get_object_or_404(Persona, usuario_id=user_id)
+
+    if request.method == 'POST':
+        form = PersonaForm(request.user, request.POST)
+        if form.is_valid():
+            persona.parent = form.cleaned_data.get('parent')
+
+            if 'grupo' in request.POST:
+                persona.usuario.groups.clear()
+                grupo = request.user.groups.exclude(name__contains='-').first()  # Obtener el grupo del usuario autenticado
+                persona.usuario.groups.add(grupo)
+                grupos = request.POST.getlist('grupo')
+                for g in grupos:
+                    grupo = Group.objects.get(id=g)
+                    persona.usuario.groups.add(grupo)
+            else:
+                grupos = persona.usuario.groups.filter(name__contains='-')
+                for g in grupos:
+                    persona.usuario.groups.remove(g)
+            persona.save()
+            return HttpResponseRedirect(reverse('campana:show'))
+    else:
+        form = PersonaForm(request.user, instance=persona)
+        form_user = UsuarioEditarForm(instance=persona.usuario)
+
+    ctx = {'form': form, 'form_user': form_user}
+    if bool(request.user.groups.filter(name__contains='-')) or request.user.is_superuser:
+        form_grupo = GrupoForm(request.user, initial={'grupo': persona.usuario.groups.all()})
+        ctx.update({'form_grupo': form_grupo})
+    return render(request, 'campana/persona_edit.html', ctx)
 
 
 def categoria_add(request):
@@ -80,17 +173,23 @@ def ws_usuario_add(request):
     if request.method == 'POST' and request.is_ajax():
         form = UsuarioCrearForm(request.POST)
         if form.is_valid():
-            grupo = request.user.groups.all()[0]  # Obtener el primer grupo del usuario autenticado
+            grupo = request.user.groups.exclude(name__contains='-').first()  # Obtener el grupo del usuario autenticado
             usuario = form.save()
             usuario.groups.add(grupo)
             usuario.email = usuario.username
             usuario.save()
+
+            padre = Persona.objects.get(usuario=request.user)
+            persona = Persona(usuario=usuario, parent=padre)
+            persona.save()
 
             data = serializers.serialize('json',
                                          User.objects.filter(username=usuario.username),
                                          fields=('pk', 'username')
                                          )
             return JsonResponse(data, safe=False)
+        else:
+            print form.errors
 
 
 def cliente_add(request):
@@ -109,4 +208,5 @@ def cliente_add(request):
         #print form.__dict__
     ctx = {'form': form, 'form_user': form_user}
     return render(request, 'campana/cliente_add.html', ctx)
+
 

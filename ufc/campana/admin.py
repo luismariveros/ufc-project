@@ -20,6 +20,8 @@ admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(Cliente, ClienteAdmin)
 admin.site.register(Candidato)
 admin.site.register(Votante)
+admin.site.register(Eleccion)
+admin.site.register(Partido)
 admin.site.register(
     Persona,
     DraggableMPTTAdmin,

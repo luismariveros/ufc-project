@@ -2,8 +2,8 @@
 {% load mptt_tags %}
 {% load bootstrap3 %}
 
+{% block h1 %}Agregar Persona{% endblock h1 %}
 {% block content %}
-
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-success">
@@ -20,7 +20,7 @@
                                 {% bootstrap_icon "user" %} Crear Usuario
                             </button>
                         {% endbuttons %}
-                        <div class="alert alert-success" id="block-alerta">
+                        <div class="alert alert-success" id="block-alerta" style="display: none;">
                             <strong>Usuario creado!</strong> Favor completar la Estructura del usuario.
                         </div>
                     </form>
@@ -38,19 +38,19 @@
                         {% bootstrap_form form %}
                         <input type="hidden" name="username" id="username">
 
-                        {% if user.is_superuser or form_permiso %}
+                        {% if form_grupo %}
                             <div class="panel panel-info">
                                 <div class="panel-heading">
                                     <h3 class="panel-title">Permiso</h3>
                                 </div>
                                 <div class="panel-body">
-                                    {% bootstrap_form form_permiso %}
+                                    {% bootstrap_form form_grupo %}
                                 </div>
                             </div>
                         {% endif %}
 
                         {% buttons %}
-                            <button type="submit" class="btn btn-warning" id="id_estructura">
+                            <button type="submit" class="btn btn-warning" id="id_estructura" disabled="true">
                                 {% bootstrap_icon "save" %} Guardar
                             </button>
                         {% endbuttons %}
@@ -68,10 +68,8 @@
     <script type="application/javascript">
 
         $().ready(function(){
-            $('#block-alerta').hide();
-            $('#id_nombre').focus();
+            $('#id_first_name').focus();
             $("#id_parent option[value='']").remove();
-            $('#id_estructura').prop('disabled',true);
         });
 
         $("#form_usuario").submit(function (e) {

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load mptt_tags %}
+{% load bootstrap3 %}
+
+{% block h1 %}Agregar Votante{% endblock h1 %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Agregar Votante</h3>
+                </div>
+                <div class="panel-body">
+                    <form method="post" class="form" id="form_usuario">
+                        {% csrf_token %}
+                        {% bootstrap_form form %}
+
+                        {% buttons %}
+                            <button type="submit" class="btn btn-success btn-lg btn-block" disabled="true">
+                                {% bootstrap_icon "user" %} Guardar Votante
+                            </button>
+                            <button type="submit" class="btn btn-warning btn-lg btn-block" name="_addanother" disabled="true">
+                                {% bootstrap_icon "plus" %} Guardar y Agregar Otro Votante
+                            </button>
+                        {% endbuttons %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Datos Padrón</h3>
+                </div>
+                <div class="panel-body">
+                    <form action="" method="post" class="form">
+                        {% csrf_token %}
+                        {% bootstrap_form form_user %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+
+{% block extra_script %}
+    <script type="application/javascript">
+        $().ready(function(){
+
+        });
+
+        $("#id_cedula").change(function () {
+            var cedula = $(this).val();
+
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'padron:cedula' 0 %}'.replace('0', cedula),
+                data: {
+                    'cedula': cedula
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.length > 0) {
+                        console.log(data.length);
+                        $('#id_cedula').closest('.form-group').removeClass('has-error');
+                        $('#id_cedula').closest('.form-group').addClass('has-success');
+                        $('#block-error').remove();
+
+                        $('#padron_cedula').val(data[0].cedula);
+                        $('#padron_nombre').val(data[0].nombre);
+
+                        $('button.btn').prop('disabled', false);
+                    }else{
+                        console.log('entro else');
+                        $('#block-error').remove();
+                        $('#id_cedula').closest('.form-group').addClass('has-error');
+                        $('#id_cedula').closest('.form-group').append('<div id="block-error" class="help-block">No existe en el Padrón</div>');
+                        $('#padron_cedula').val('');
+                        $('#padron_nombre').val('');
+
+                        $('button.btn').prop('disabled', true);
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
