@@ -22,7 +22,6 @@ from django.conf.urls.static import static
 urlpatterns = [
     url('^', include('django.contrib.auth.urls')),
     url(r'^admin/', admin.site.urls),
-    url(r'^', include('visita.urls')),
     url(r'^padron/', include('padron.urls')),
     url(r'^', include('campana.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

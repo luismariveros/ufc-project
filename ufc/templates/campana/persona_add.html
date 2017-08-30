@@ -50,8 +50,11 @@
                         {% endif %}
 
                         {% buttons %}
-                            <button type="submit" class="btn btn-warning" id="id_estructura" disabled="true">
+                            <button type="submit" class="btn btn-success" id="btn_save" disabled="true">
                                 {% bootstrap_icon "save" %} Guardar
+                            </button>
+                            <button type="submit" class="btn btn-warning" id="btn_save_add" name="_addanother" disabled="true">
+                                {% bootstrap_icon "plus" %} Guardar y Agregar Otra Persona
                             </button>
                         {% endbuttons %}
                     </form>
@@ -79,7 +82,8 @@
             posting.done(function(data) {
                 $('#block-alerta').show();
                 $('#id_usuario_add').prop('disabled',true);
-                $('#id_estructura').removeAttr('disabled');
+                $('#btn_save').removeAttr('disabled');
+                $('#btn_save_add').removeAttr('disabled');
 
                 var json = $.parseJSON(data);
                 $(json).each(function(i,val){
@@ -96,7 +100,7 @@
         $("#id_username").change(function () {
             $.ajax({
                 type: 'GET',
-                url: '{% url 'campana:usuario_validar' %}',
+                url: '{% url 'campana:usuario_validate' %}',
                 dataType: 'json',
                 data: {
                     'username': $(this).val()

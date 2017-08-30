@@ -4,8 +4,10 @@ from django.shortcuts import render, HttpResponseRedirect, get_list_or_404, get_
 from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.core.urlresolvers import reverse
 from django.core import serializers
-from django.http import JsonResponse
+from django.urls import reverse_lazy
+from django.http import JsonResponse, Http404
 from django.contrib import messages
+from django.views.generic.edit import DeleteView
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Permission
@@ -23,11 +25,10 @@ from mptt.forms import MoveNodeForm
 @login_required()
 def persona_list(request):
     try:
-        persona = Persona.objects.get(usuario=request.user)
-        nodes = persona.get_descendants(include_self=True)
+        personas = Persona.objects.get(usuario=request.user).get_descendants(include_self=True)
     except ObjectDoesNotExist:
-        nodes = None
-    ctx = {'nodes': nodes}
+        personas = None
+    ctx = {'personas': personas}
     return render(request, 'campana/persona_list.html', ctx)
 
 
@@ -61,9 +62,11 @@ def votante_add(request):
                 votante.candidato = candidato
                 votante.eleccion = candidato.eleccion
                 votante.save()
+
+                messages.success(request, 'Votante agregado correctamente.')
                 if '_addanother' in request.POST:
                     return HttpResponseRedirect(reverse('campana:votante_add'))
-                return HttpResponseRedirect(reverse('campana:show'))
+                return HttpResponseRedirect(reverse('campana:votante_list'))
     else:
         form = VotanteForm()
         form_user = PersonaPadronForm(auto_id="padron_%s")
@@ -79,24 +82,21 @@ def persona_add(request):
         form_persona = PersonaForm(request.user, request.POST)
 
         if form_persona.is_valid():
-            #persona = form.save(commit=False)
             padre = form_persona.cleaned_data.get('parent')
             persona = Persona.objects.get(usuario__username=username)
             persona.parent = padre
-            #usuario = User.objects.get(username=username)
+
             if 'grupo' in request.POST:
-                #form_permiso = PermisoForm2(request.user, request.POST)
-                #print form_permiso
-                #if form_permiso.is_valid():
-                #    form_permiso.save()
                 grupos = request.POST.getlist('grupo')
-                print grupos
                 for g in grupos:
                     grupo = Group.objects.get(id=g)
                     persona.usuario.groups.add(grupo)
-            #persona.usuario = usuario
             persona.save()
-            return HttpResponseRedirect(reverse('campana:show'))
+
+            messages.success(request, 'Persona agregada correctamente.')
+            if '_addanother' in request.POST:
+                return HttpResponseRedirect(reverse('campana:persona_add'))
+            return HttpResponseRedirect(reverse('campana:persona_list'))
     else:
         form_persona = PersonaForm(request.user)
         form_user = UsuarioCrearForm()
@@ -114,13 +114,15 @@ def persona_edit(request, user_id):
     persona = get_object_or_404(Persona, usuario_id=user_id)
 
     if request.method == 'POST':
-        form = PersonaForm(request.user, request.POST)
-        if form.is_valid():
-            persona.parent = form.cleaned_data.get('parent')
+        form_persona = PersonaForm(request.user, request.POST)
+        form_user = UsuarioEditarForm(request.POST, instance=persona.usuario)
+
+        if form_persona.is_valid() and form_user.is_valid():
+            persona.parent = form_persona.cleaned_data.get('parent')
 
             if 'grupo' in request.POST:
-                persona.usuario.groups.clear()
-                grupo = request.user.groups.exclude(name__contains='-').first()  # Obtener el grupo del usuario autenticado
+                persona.usuario.groups.clear()  # Borro los grupos del usuario
+                grupo = request.user.groups.exclude(name__contains='-').first()  # Obtener el grupo basico del usuario
                 persona.usuario.groups.add(grupo)
                 grupos = request.POST.getlist('grupo')
                 for g in grupos:
@@ -129,34 +131,45 @@ def persona_edit(request, user_id):
             else:
                 grupos = persona.usuario.groups.filter(name__contains='-')
                 for g in grupos:
-                    persona.usuario.groups.remove(g)
+                    persona.usuario.groups.remove(g)  # Elimino todos los grupos menos el basico (SP)
             persona.save()
-            return HttpResponseRedirect(reverse('campana:show'))
+            form_user.save()
+
+            messages.success(request, 'Persona editada correctamente.')
+            return HttpResponseRedirect(reverse('campana:persona_list'))
     else:
-        form = PersonaForm(request.user, instance=persona)
+        form_persona = PersonaForm(request.user, instance=persona)
         form_user = UsuarioEditarForm(instance=persona.usuario)
 
-    ctx = {'form': form, 'form_user': form_user}
+    ctx = {'form': form_persona, 'form_user': form_user}
     if bool(request.user.groups.filter(name__contains='-')) or request.user.is_superuser:
         form_grupo = GrupoForm(request.user, initial={'grupo': persona.usuario.groups.all()})
         ctx.update({'form_grupo': form_grupo})
     return render(request, 'campana/persona_edit.html', ctx)
 
 
-def categoria_add(request):
-    if request.method == 'POST':
-        form = CategoriaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse('campana:show'))
-        else:
-            form = CategoriaForm(request.POST)
-            ctx = {'form': form}
-            return render(request, 'campana/categoria_add.html', ctx)
-    else:
-        form = CategoriaForm
-    ctx = {'form': form}
-    return render(request, 'campana/categoria_add.html', ctx)
+class PersonaDelete(DeleteView):
+    model = Persona
+    pk_url_kwarg = 'user_id'
+    template_name = 'campana/persona_confirm_delete.html'
+    success_url = reverse_lazy('persona_list')
+
+    def get_object(self, queryset=None):
+        usuario_id = self.kwargs['user_id']
+        queryset = Persona.objects.get(usuario_id=usuario_id)
+
+        if not queryset:
+            raise Http404
+
+        ctx = {'persona': queryset, 'descendientes': queryset.get_descendants()}
+        return ctx
+
+    def delete(self, request, *args, **kwargs):
+        usuario_id = self.kwargs['user_id']
+        descendientes = Persona.objects.get(usuario_id=usuario_id).get_descendants(include_self=True).values('usuario_id')
+        User.objects.filter(pk__in=descendientes).delete()
+        messages.success(request, 'Persona borrada correctamente.')
+        return HttpResponseRedirect(reverse('campana:persona_list'))
 
 
 def ws_usuario_validar(request):
@@ -190,23 +203,3 @@ def ws_usuario_add(request):
             return JsonResponse(data, safe=False)
         else:
             print form.errors
-
-
-def cliente_add(request):
-    if request.method == 'POST':
-        form = ClienteForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse('campana:show'))
-    else:
-        a = Cliente.objects.get(user_id=User.objects.get(username='diego@gmail.com').id)
-        #a = Cliente.objects.get(user_id=User.objects.get(username='test').id)
-
-        form = ClienteForm(instance=a)
-        form_user = UsuarioCrearForm()
-
-        #print form.__dict__
-    ctx = {'form': form, 'form_user': form_user}
-    return render(request, 'campana/cliente_add.html', ctx)
-
-

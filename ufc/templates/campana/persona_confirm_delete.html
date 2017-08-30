@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load mptt_tags %}
+{% load bootstrap3 %}
+
+{% block h1 %}Eliminar Persona{% endblock h1 %}
+{% block content %}
+    <div class="row" xmlns="http://www.w3.org/1999/html">
+        <form action="" method="post" class="form">
+            {% csrf_token %}
+            <h4>¿Seguro que quieres eliminar a la persona: <strong>"{{ object.persona }}"</strong>?</h4>
+            <h4>Se borrarán todas las personas dependendientes y sus votantes.</h4>
+            {% if object.descendientes %}
+                <h4>Personas dependientes:</h4>
+                <ul>
+                    {% recursetree object.descendientes %}
+                        <li>
+                            {{ node }} - Votantes: {{ node.get_votante_count }}
+                            {% if not node.is_leaf_node %}
+                                <ul class="children">
+                                    {{ children }}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endrecursetree %}
+                </ul>
+            {% endif %}
+            {% buttons %}
+                <button type="submit" class="btn btn-lg btn-danger">
+                    {% bootstrap_icon "delete" %} Eliminar
+                </button>
+            {% endbuttons %}
+        </form>
+    </div>
+
+{% endblock content %}

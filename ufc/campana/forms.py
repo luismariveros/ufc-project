@@ -1,29 +1,9 @@
-from django import forms
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from treebeard.forms import *
-from mptt.forms import *
+from django.contrib.auth.forms import UserCreationForm
+from django import forms
 
 from .models import *
 from django.contrib.auth.models import Group
-
-
-#CategoriaForm = movenodeform_factory(Categoria)
-
-class CategoriaForm(MoveNodeForm):
-    class Meta:
-        model = Categoria
-        exclude = ('sib_order', 'parent')
-
-
-class ClienteForm(MoveNodeForm):
-
-    class Meta:
-        model = Cliente
-        fields = ('user_id', 'permiso', '_position', '_ref_node_id')
-        widgets = {
-            'user_id': forms.HiddenInput()
-        }
 
 
 class PersonaForm(forms.ModelForm):
@@ -78,15 +58,7 @@ class GrupoForm(forms.ModelForm):
 
     def __init__(self, user, *args, **kwargs):
         super(GrupoForm, self).__init__(*args, **kwargs)
-        #self.fields['grupos'].queryset = Group.objects.all()
-        #self.fields['grupos'].initial = (('4', 'SP-COLAB'),)
         self.fields['grupo'].queryset = Group.objects.filter(user=user, name__contains='-').order_by('name')
-        #if user.groups.filter(name__contains='ADMIN') or user.is_superuser:
-            #choices = self.fields['permiso'].choices
-            #choices.append(('ADMIN', 'Administrador'), )
-
-        #else:
-        #    self.fields['grupos'].queryset = Group.objects.filter(user=user)
 
 
 class UsuarioCrearForm(UserCreationForm):

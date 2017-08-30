@@ -47,8 +47,6 @@ INSTALLED_APPS = [
     'bootstrap3',
     'rest_framework',
     'mptt',
-    'treebeard',
-    'visita.apps.VisitaConfig',
     'padron.apps.PadronConfig',
     'campana.apps.CampanaConfig',
     'identificacion.apps.IdentificacionConfig',

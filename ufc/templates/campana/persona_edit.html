@@ -55,27 +55,5 @@
             $('#id_first_name').focus();
             $("#id_parent option[value='']").remove();
         });
-
-        $("#id_username").change(function () {
-            $.ajax({
-                type: 'GET',
-                url: '{% url 'campana:usuario_validar' %}',
-                dataType: 'json',
-                data: {
-                    'username': $(this).val()
-                },
-                success: function (data) {
-                    if (data.is_taken) {
-                        $('#block-error').remove();
-                        $('#id_username').closest('.form-group').addClass('has-error');
-                        $('#id_username').closest('.form-group').append('<div id="block-error" class="help-block">'.concat(data.error_message,'</div>'));
-                    }else{
-                        $('#id_username').closest('.form-group').removeClass('has-error');
-                        $('#id_username').closest('.form-group').addClass('has-success');
-                        $('#block-error').remove();
-                    }
-                }
-            });
-        });
     </script>
 {% endblock %}

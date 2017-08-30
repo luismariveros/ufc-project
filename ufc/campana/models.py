@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from mptt.models import MPTTModel, TreeForeignKey
-from treebeard.mp_tree import MP_Node
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.timezone import now
@@ -39,11 +38,15 @@ class Candidato(models.Model):
 
 
 class Persona(MPTTModel):
-    usuario = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(User)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
     def __unicode__(self):
         return self.usuario.get_full_name() if self.usuario else 'Sin Usuario'
+
+    def get_votante_count(self):
+        return self.votante_set.all().count()
+
 
 
 class Votante(models.Model):
@@ -55,23 +58,4 @@ class Votante(models.Model):
 
     def __unicode__(self):
         return "%s-%s" % (self.candidato, self.cedula)
-
-
-class Categoria(MP_Node):
-    nombre = models.CharField(max_length=50)
-
-    node_order_by = ['nombre']
-
-    def __unicode__(self):
-        return 'Categoria: %s' % self.nombre
-
-
-class Cliente(MP_Node):
-    user_id = models.BigIntegerField(db_index=True)
-    permiso = models.BooleanField(default=False, help_text="El Usuario podra revisar toda la estructura?")
-
-    node_order_by = ['user_id']
-
-    def __unicode__(self):
-        return User.objects.get(id=self.user_id).get_full_name() if self.user_id else 'Sin Usuario'
 

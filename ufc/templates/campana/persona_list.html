@@ -4,20 +4,30 @@
 {% load static %}
 
 {% block extra_head %}
-{#    <link href="{% static 'dist/css/jqtree.css' %}" rel="stylesheet">#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
 {% endblock extra_head %}
 
+{% block h1 %}Lista de Personas{% endblock %}
+
 {% block content %}
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
             <a id="id_editar_persona" role="button" class="btn btn-primary" href="" disabled="">Editar Persona</a>
+            <a id="id_eliminar_persona" role="button" class="btn btn-danger" href="" disabled="">Eliminar Persona</a>
             <a id="id_expandir" role="button" class="btn btn-info" onclick="jstreeToggleState();">Contraer</a>
+        </div>
+    </div>
+    <div class="row" style="margin-top: 15px;">
+        <div class="col-md-4">
             <div id="tree1">
                 <ul>
-                    {% recursetree nodes %}
+                    {% recursetree personas %}
                         <li id="{{ node.usuario.id }}">
-                            <a href="{% url 'campana:persona_edit' node.usuario.id %}">{{ node.usuario.get_full_name }}</a>
+                            <a href="{% url 'campana:persona_edit' node.usuario.id %}">
+                                {{ node.usuario.get_full_name }}
+                                | Personas a su cargo: {{ node.get_descendant_count }}
+                                | Votantes: {{ node.get_votante_count }}
+                            </a>
                             {% if not node.is_leaf_node %}
                                 <ul class="children">
                                     {{ children }}
@@ -41,10 +51,8 @@
                     "themes" : {
                         "icons" : false
                     },
-                    "check_callback" : true,
                     "multiple": false
                 },
-                "plugins" : ["themes", "dnd", "wholerow"]
             });
             $('#tree1').on('ready.jstree', function(){
                 $(this).jstree('open_all');
@@ -56,6 +64,8 @@
                 return '';
             $('#id_editar_persona').removeAttr('disabled');
             $('#id_editar_persona').attr("href", href);
+            $('#id_eliminar_persona').removeAttr('disabled');
+            $('#id_eliminar_persona').attr("href", href+"delete/");
         });
 
         var isTreeOpen = true;
