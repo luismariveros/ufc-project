@@ -53,9 +53,18 @@
                     },
                     "multiple": false
                 },
+                "plugins" : ["search"]
             });
             $('#tree1').on('ready.jstree', function(){
                 $(this).jstree('open_all');
+            });
+            var to = false;
+            $('#tb_search').keyup(function () {
+                if(to) { clearTimeout(to); }
+                to = setTimeout(function () {
+                    var v = $('#tb_search').val();
+                    $('#tree1').jstree(true).search(v);
+                }, 250);
             });
         });
         $('#tree1').on("select_node.jstree", function (e, data) {
@@ -68,6 +77,13 @@
             $('#id_eliminar_persona').attr("href", href+"delete/");
         });
 
+        $(function () {
+            $("#plugins4").jstree({
+                "plugins" : [ "search" ]
+            });
+
+        });
+        $('#tb_search').keyup()
         var isTreeOpen = true;
         function jstreeToggleState() {
             if(isTreeOpen){
